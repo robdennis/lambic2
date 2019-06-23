@@ -1,12 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Mana } from "@saeris/react-mana"
 import './index.css';
 
 
 function Square(props) {
+
+    const content = (props.value ? <Mana symbol={props.value} cost shadow/>: null);
+
     return (
         <button className="square" onClick={props.onClick}>
-            {props.value}
+            {content}
         </button>
     );
 }
@@ -53,7 +57,7 @@ class Game extends React.Component {
                 squares: Array(9).fill(null),
             }],
             stepNumber: 0,
-            xIsNext: true,
+            rIsNext: true,
         };
     }
 
@@ -64,20 +68,20 @@ class Game extends React.Component {
         if (calculateWinner(squares) || squares[i]) {
             return;
         }
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
+        squares[i] = (this.state.rIsNext ? "r" : "g");
         this.setState({
             history: history.concat([{
                 squares: squares,
             }]),
             stepNumber: history.length,
-            xIsNext: !this.state.xIsNext,
+            rIsNext: !this.state.rIsNext,
         });
     }
 
     jumpTo(step) {
         this.setState({
             stepNumber: step,
-            xIsNext: (step % 2) === 0,
+            rIsNext: (step % 2) === 0,
         });
     }
 
@@ -97,10 +101,13 @@ class Game extends React.Component {
         });
 
         let status;
+        let symbol;
         if (winner) {
-            status = 'Winner: ' + winner;
+            status = 'Winner: ';
+            symbol = winner;
         } else {
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+            status = 'Next player: ';
+            symbol = (this.state.rIsNext ? "g" : "r");
         }
 
         return (
@@ -112,7 +119,10 @@ class Game extends React.Component {
                     />
                 </div>
                 <div className="game-info">
-                    <div>{status}</div>
+                    <div>
+                        <div>{status}</div>
+                        <div><Mana symbol={symbol} shadow fixed size="2x"/></div>
+                    </div>
                     <ol>{moves}</ol>
                 </div>
             </div>
