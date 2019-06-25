@@ -16,6 +16,18 @@ function Square(props) {
 }
 
 class Board extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {cards: []};
+    }
+
+    componentDidMount() {
+        fetch('/cards.json')
+            .then(response=>response.json())
+            .then(cards=>this.setState({cards}))
+
+    }
 
     renderSquare(i) {
         return (
@@ -27,8 +39,22 @@ class Board extends React.Component {
     }
 
     render() {
+        const cards = this.state.cards.map((card, _) => {
+            console.log(_);
+            console.log(card);
+            return (
+                <li key={card['id']}>
+                    {card['name']}
+                </li>
+            );
+        });
+
         return (
             <div>
+                cards:
+                <ol>
+                    { cards }
+                </ol>
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
