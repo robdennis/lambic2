@@ -38,13 +38,48 @@ class Board extends React.Component {
         );
     }
 
+    renderMana(card) {
+        const costs = this.splitManaCost(this.getManaCost(card));
+
+        return costs.map((cost, _) => {
+            return cost.map((symbol, _) => {
+                return (
+                    <Mana symbol={symbol} cost/>
+                );
+            });
+        }).reduce((prev, curr) => {
+            return [prev, ' // ', curr]
+        });
+    }
+
+    splitManaCost(manaCosts) {
+
+        return manaCosts.map((manaCost, _) => {
+            // split a mana cost of the form "{U}{2/W}{X}" to an array of ["U", "2/W", "X"]
+            if (!manaCost || manaCost.charAt(0) !== '{' || manaCost.charAt(manaCost.length-1) !== '}') {
+                return [];
+            }
+            return manaCost.substr(1, manaCost.length-2).split('}{').map((cost, ) => {
+                return cost.toLowerCase()
+            })
+        });
+    }
+
+    getManaCost(card) {
+        if ('card_faces' in card) {
+            return card['card_faces'].filter((face => face['mana_cost'])).map((face, _) => {
+                return face['mana_cost']
+            })
+        }
+
+        return [card['mana_cost']]
+    }
+
     render() {
         const cards = this.state.cards.map((card, _) => {
-            console.log(_);
-            console.log(card);
             return (
                 <li key={card['id']}>
-                    {card['name']}
+                    {card['name']} - {this.renderMana(card)}
                 </li>
             );
         });
