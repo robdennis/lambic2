@@ -7,7 +7,9 @@
     "mana-font": "^1.4.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1"
+    "react-image": "^2.1.3",
+    "react-scripts": "3.0.1",
+    "react-tooltip": "^3.10.0"
   },
   "scripts": {
     "start": "react-scripts start",

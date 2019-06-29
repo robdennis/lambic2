@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Mana } from "@saeris/react-mana"
+import ReactTooltip from 'react-tooltip'
+import Img from 'react-image'
 import './index.css';
 
 
@@ -75,12 +77,30 @@ class Board extends React.Component {
         return [card['mana_cost']]
     }
 
+    getImages(card) {
+        if ('image_uris' in card) {
+            return [<Img src={card['image_uris']['normal']} height='530'/>];
+        }
+
+        else if ('card_faces' in card) {
+            return card['card_faces'].filter((face => face['image_uris'])).map((face, _) => {
+                return <Img src={face['image_uris']['normal']} height='530'/>;
+            })
+        }
+
+        return 'UNKNOWN IMAGE URI FORMAT'
+    }
+
     render() {
         const cards = this.state.cards.map((card, _) => {
             return (
-                <li key={card['id']}>
-                    {card['name']} - {this.renderMana(card)}
+                <li key={card['id']} data-tip data-for={card['id']}>
+                        {card['name']} - {this.renderMana(card)}
+                    <ReactTooltip id={card['id']} place='bottom'>
+                        {this.getImages(card)}
+                    </ReactTooltip>
                 </li>
+
             );
         });
 
