@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@saeris/react-mana": "^1.0.3",
+    "dexie": "^2.0.4",
     "mana-font": "^1.4.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",

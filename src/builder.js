@@ -2,20 +2,46 @@ import React from 'react';
 import { Mana } from "@saeris/react-mana"
 import ReactTooltip from 'react-tooltip'
 import Img from 'react-image'
+import {card_db, pool_db} from './db'
 
 
 class Builder extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {cards: []};
+        this.state = {
+            cards: [],
+            pool: card_db.table('cards')
+        };
+    }
+
+    setCards() {
+        card_db.table('cards').toArray().then(
+            (cards) => {
+                console.log('set state on cards: ', cards);
+                this.setState({cards})
+            }
+        )
     }
 
     componentDidMount() {
-        fetch('/cards.json')
-            .then(response=>response.json())
-            .then(cards=>this.setState({cards}))
-
+        card_db.table('cards').count().then((count) => {
+            console.log('cards in database: ', count);
+            if (count === 0) {
+                console.log('fetching cards');
+                fetch('/cards.json')
+                    .then(response=>response.json())
+                    .then((cards) => {
+                        return this.state.cards.bulkAdd(cards)
+                    }).then((lastKey) => {
+                    console.log('finished adding to cards db');
+                }).then(() => this.setState);
+            }
+            else {
+                console.log('not fetching cards; relying on cache');
+                this.setCards()
+            }
+        })
     }
 
     renderMana(card) {
@@ -69,9 +95,8 @@ class Builder extends React.Component {
         return 'UNKNOWN IMAGE URI FORMAT'
     }
 
-
-    render() {
-        const cards = this.state.cards.map((card, _) => {
+    renderCards(cards) {
+        return cards.map((card, _) => {
             return (
                 <li key={card['id']} data-tip data-for={card['id']}>
                     {card['name']} - {this.renderMana(card)}
@@ -79,39 +104,27 @@ class Builder extends React.Component {
                         {this.getImages(card)}
                     </ReactTooltip>
                 </li>
-
             );
         });
+    }
 
+    render() {
         return (
             <div>
-                <ol>
-                    { cards }
-                </ol>
+                <div className='cards'>
+                    cards
+                    <ol>
+                        { this.renderCards(this.state.cards) }
+                    </ol>
+                </div>
+                <div className='pool'>
+                    pool
+                    <ol>
+                    </ol>
+                </div>
             </div>
         );
     }
-}
-
-
-function calculateWinner(squares) {
-    const lines = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ];
-    for (let i = 0; i < lines.length; i++) {
-        const [a, b, c] = lines[i];
-        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-            return squares[a];
-        }
-    }
-    return null;
 }
 
 export default Builder;
