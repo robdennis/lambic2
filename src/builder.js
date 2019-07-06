@@ -2,6 +2,7 @@ import React from 'react';
 import { Mana } from "@saeris/react-mana"
 import ReactTooltip from 'react-tooltip'
 import Img from 'react-image'
+import Dexie from 'dexie'
 import {card_db, pool_db} from './db'
 
 
@@ -13,9 +14,14 @@ class Builder extends React.Component {
             cards: [],
             pool: card_db.table('cards')
         };
+
+
+        this.clearCache = this.clearCache.bind(this);
+        this.fillCache = this.fillCache.bind(this);
     }
 
     setCards() {
+        console.log('setting this.state.cards');
         card_db.table('cards').toArray().then(
             (cards) => {
                 console.log('set state on cards: ', cards);
@@ -28,18 +34,11 @@ class Builder extends React.Component {
         card_db.table('cards').count().then((count) => {
             console.log('cards in database: ', count);
             if (count === 0) {
-                console.log('fetching cards');
-                fetch('/cards.json')
-                    .then(response=>response.json())
-                    .then((cards) => {
-                        return this.state.cards.bulkAdd(cards)
-                    }).then((lastKey) => {
-                    console.log('finished adding to cards db');
-                }).then(() => this.setState);
+                this.fillCache();
             }
             else {
                 console.log('not fetching cards; relying on cache');
-                this.setCards()
+                this.setCards();
             }
         })
     }
@@ -59,7 +58,6 @@ class Builder extends React.Component {
     }
 
     splitManaCost(manaCosts) {
-
         return manaCosts.map((manaCost, _) => {
             // split a mana cost of the form "{U}{2/W}{X}" to an array of ["U", "2/W", "X"]
             if (!manaCost || manaCost.charAt(0) !== '{' || manaCost.charAt(manaCost.length-1) !== '}') {
@@ -98,7 +96,7 @@ class Builder extends React.Component {
     renderCards(cards) {
         return cards.map((card, _) => {
             return (
-                <li key={card['id']} data-tip data-for={card['id']}>
+                <li key={card['id']} data-tip data-for={card['id']} className='card-list-entry'>
                     {card['name']} - {this.renderMana(card)}
                     <ReactTooltip id={card['id']} place='bottom'>
                         {this.getImages(card)}
@@ -108,11 +106,41 @@ class Builder extends React.Component {
         });
     }
 
+    clearCache() {
+        console.log('clearing cards');
+        card_db.table('cards').clear().then(() => {
+            console.log('finished clearing');
+            this.setCards();
+        })
+    }
+
+    fillCache() {
+        console.log('fetching cards');
+        fetch('/cards.json')
+            .then(response=>response.json())
+            .then((cards) => {
+                return card_db.table('cards').bulkAdd(cards)
+                    .catch(Dexie.BulkError, function (e) {
+                        console.log('Ignoring errors during filling cache.')
+                    });
+            }).then((lastKey) => {
+            console.log('finished adding to cards db');
+            this.setCards();
+        });
+    }
+
     render() {
+
         return (
             <div>
                 <div className='cards'>
                     cards
+                    <button className="clear-cache" onClick={this.clearCache}>
+                        clear cache
+                    </button>
+                    <button className="fill-cache" onClick={this.fillCache}>
+                        fill cache
+                    </button>
                     <ol>
                         { this.renderCards(this.state.cards) }
                     </ol>
