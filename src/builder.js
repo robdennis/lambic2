@@ -4,7 +4,7 @@ import ReactTooltip from 'react-tooltip'
 import Img from 'react-image'
 import Dexie from 'dexie'
 import {card_db, pool_db} from './db'
-
+import CardSuggest from './card-suggest'
 
 class Builder extends React.Component {
     constructor(props) {
@@ -12,7 +12,7 @@ class Builder extends React.Component {
 
         this.state = {
             cards: [],
-            pool: card_db.table('cards')
+            pool: []
         };
 
 
@@ -20,17 +20,28 @@ class Builder extends React.Component {
         this.fillCache = this.fillCache.bind(this);
     }
 
-    setCards() {
-        console.log('setting this.state.cards');
-        card_db.table('cards').toArray().then(
+    setCards(table, stateName) {
+        console.log('setting this.state.' + stateName);
+        table.table('cards').toArray().then(
             (cards) => {
                 console.log('set state on cards: ', cards);
-                this.setState({cards})
+                this.setState({[stateName]: cards});
+                console.log(this.state);
             }
         )
     }
 
+    clearCache(table, stateName) {
+        console.log('clearing cards for ', stateName);
+        table.table('cards').clear().then(() => {
+            console.log('finished clearing ', stateName);
+            this.setCards(table, stateName);
+        })
+    }
+
     componentDidMount() {
+        this.setCards(pool_db, 'pool');
+
         card_db.table('cards').count().then((count) => {
             console.log('cards in database: ', count);
             if (count === 0) {
@@ -38,7 +49,7 @@ class Builder extends React.Component {
             }
             else {
                 console.log('not fetching cards; relying on cache');
-                this.setCards();
+                this.setCards(card_db, 'cards');
             }
         })
     }
@@ -93,10 +104,10 @@ class Builder extends React.Component {
         return 'UNKNOWN IMAGE URI FORMAT'
     }
 
-    renderCards(cards) {
+    renderCards(cards, key) {
         return cards.map((card, _) => {
             return (
-                <li key={card['id']} data-tip data-for={card['id']} className='card-list-entry'>
+                <li key={card[key]} data-tip data-for={card['id']} className='card-list-entry'>
                     {card['name']} - {this.renderMana(card)}
                     <ReactTooltip id={card['id']} place='bottom'>
                         {this.getImages(card)}
@@ -104,14 +115,6 @@ class Builder extends React.Component {
                 </li>
             );
         });
-    }
-
-    clearCache() {
-        console.log('clearing cards');
-        card_db.table('cards').clear().then(() => {
-            console.log('finished clearing');
-            this.setCards();
-        })
     }
 
     fillCache() {
@@ -125,8 +128,15 @@ class Builder extends React.Component {
                     });
             }).then((lastKey) => {
             console.log('finished adding to cards db');
-            this.setCards();
+            this.setCards(card_db, 'cards');
         });
+    }
+
+    addToPool(event, { suggestion, suggestionValue, suggestionIndex, sectionIndex, method }) {
+        console.log('adding to pool', suggestion);
+        pool_db.table('cards').add(suggestion).then(() => {
+            this.setState({'pool': this.state.pool.concat([suggestion])});
+        })
     }
 
     render() {
@@ -135,19 +145,25 @@ class Builder extends React.Component {
             <div>
                 <div className='cards'>
                     cards
-                    <button className="clear-cache" onClick={this.clearCache}>
+                    <button className="clear-cache" onClick={() => this.clearCache(card_db, 'cards')}>
                         clear cache
                     </button>
                     <button className="fill-cache" onClick={this.fillCache}>
                         fill cache
                     </button>
                     <ol>
-                        { this.renderCards(this.state.cards) }
+                        { this.renderCards(this.state.cards, 'id') }
                     </ol>
                 </div>
                 <div className='pool'>
                     pool
+                    <button className="clear-pool" onClick={() => this.clearCache(pool_db, 'pool')}>
+                        clear pool
+                    </button>
+                    <CardSuggest table={card_db.table('cards')}
+                                 onSuggestionSelected={this.addToPool.bind(this)} />
                     <ol>
+                        { this.renderCards(this.state.pool,  'pool_id') }
                     </ol>
                 </div>
             </div>

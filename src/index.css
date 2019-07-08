@@ -4,15 +4,17 @@ body {
 }
 
 .pool {
-    float: right;
     border:1px solid darkblue;
 }
 
 .cards {
-    float: left;
     border:1px solid gold;
 }
 
 .card-list-entry {
     border:1px solid black;
+}
+
+.card-suggest {
+    border:1px solid green;
 }
