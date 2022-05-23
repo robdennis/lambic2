@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@saeris/react-mana": "^1.0.3",
-    "dexie": "^2.0.4",
+    "dexie": "^3.2.2",
     "mana-font": "^1.4.1",
     "react": "^16.8.6",
     "react-autosuggest": "^9.4.3",
